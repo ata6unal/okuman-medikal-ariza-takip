@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okuman Medikal - Teknik Yönetim Masası</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-slate-700">
+            <div>
+                <h1 class="text-3xl font-bold text-teal-400 tracking-wide flex items-center gap-3">
+                    <i class="fa-solid fa-heart-pulse"></i> OKUMAN MEDİKAL
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Merkezi Teknik Servis & Arıza Yönetim Paneli</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <div class="bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-center">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold">Toplam</span>
+                    <span id="totalCount" class="text-xl font-bold text-white">0</span>
+                </div>
+                <div class="bg-slate-800 border border-rose-500/30 px-4 py-2.5 rounded-xl text-center">
+                    <span class="text-[11px] text-rose-400 block uppercase font-semibold">Aktif Kritik</span>
+                    <span id="criticalCount" class="text-xl font-bold text-rose-500">0</span>
+                </div>
+                <div class="bg-slate-800 border border-amber-500/30 px-4 py-2.5 rounded-xl text-center">
+                    <span class="text-[11px] text-amber-400 block uppercase font-semibold">İncelenen</span>
+                    <span id="investigatingCount" class="text-xl font-bold text-amber-400">0</span>
+                </div>
+                <div class="bg-slate-800 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-center">
+                    <span class="text-[11px] text-emerald-400 block uppercase font-semibold">Onarılan</span>
+                    <span id="resolvedCount" class="text-xl font-bold text-emerald-400">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sekmeler -->
+        <div class="flex gap-2 border-b border-slate-700 pb-3 mb-6">
+            <button onclick="switchTab('ALL')" id="tab-ALL" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-teal-500/20 text-teal-300 border border-teal-500 transition flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Tüm Arıza Kayıtları
+            </button>
+            <button onclick="switchTab('AÇIK')" id="tab-AÇIK" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-rose-500/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> Bekleyen Açık Arızalar
+            </button>
+            <button onclick="switchTab('İNCELENİYOR')" id="tab-İNCELENİYOR" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-amber-500/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-wrench text-amber-400"></i> Müdahale / İnceleme Masası
+            </button>
+            <button onclick="switchTab('ÇÖZÜLDÜ')" id="tab-ÇÖZÜLDÜ" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 border border-slate-700 hover:border-emerald-500/50 transition flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-400"></i> Onarılanlar & Arşiv
+            </button>
+        </div>
+
+        <!-- Arama Barı -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shadow-lg">
+            <div class="relative w-full md:w-96">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Cihaz modeli, hata kodu veya not ara..." 
+                    oninput="applyFilter()"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 transition"
+                >
+            </div>
+            <div class="text-xs text-slate-400 flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Sistem canlı senkronize ediliyor
+            </div>
+        </div>
+
+        <!-- Ana Tablo -->
+        <main class="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-800 text-slate-400 uppercase text-xs border-b border-slate-700">
+                        <tr>
+                            <th class="py-3.5 px-4 text-center">Fotoğraf</th>
+                            <th class="py-3.5 px-4">ID</th>
+                            <th class="py-3.5 px-4">Cihaz Modeli</th>
+                            <th class="py-3.5 px-4">Hata Kodu</th>
+                            <th class="py-3.5 px-4">Saha Açıklaması & Teknisyen Notu</th>
+                            <th class="py-3.5 px-4">Kritiklik</th>
+                            <th class="py-3.5 px-4">Mevcut Durum</th>
+                            <th class="py-3.5 px-4">Tarih</th>
+                            <th class="py-3.5 px-4 text-center">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faultTableBody" class="divide-y divide-slate-700/50">
+                        <!-- JS ile dolacak -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Fotoğraf Büyütme Modalı -->
+    <div id="imageModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div class="relative max-w-4xl max-h-[90vh] bg-slate-800 p-3 rounded-2xl border border-slate-600 shadow-2xl flex flex-col items-center" onclick="event.stopPropagation()">
+            <button onclick="closeImageModal()" class="absolute -top-3 -right-3 bg-rose-600 hover:bg-rose-700 text-white w-9 h-9 rounded-full font-bold flex items-center justify-center shadow-lg transition text-base">✕</button>
+            <img id="modalImage" src="" alt="Arıza Fotoğrafı" class="max-h-[80vh] w-auto max-w-full rounded-xl object-contain border border-slate-700">
+            <div class="text-xs text-slate-400 mt-2">Kapatmak için dışarıya veya çarpıya tıklayın</div>
+        </div>
+    </div>
+
+    <script>
+        let allFaults = [];
+        let currentTab = 'ALL';
+
+        function showPhoto(faultId) {
+            const fault = allFaults.find(f => f.id === faultId);
+            if (fault && fault.image_data) {
+                document.getElementById('modalImage').src = fault.image_data;
+                document.getElementById('imageModal').classList.remove('hidden');
+            }
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.getElementById('modalImage').src = '';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition flex items-center gap-2';
+            });
+            
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) {
+                if (tab === 'ALL') activeBtn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-teal-500/20 text-teal-300 border border-teal-500 transition flex items-center gap-2';
+                if (tab === 'AÇIK') activeBtn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-rose-500/20 text-rose-300 border border-rose-500 transition flex items-center gap-2';
+                if (tab === 'İNCELENİYOR') activeBtn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500/20 text-amber-300 border border-amber-500 transition flex items-center gap-2';
+                if (tab === 'ÇÖZÜLDÜ') activeBtn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500 transition flex items-center gap-2';
+            }
+            renderTable();
+        }
+
+        async function promptStatusUpdate(id, newStatus) {
+            let note = "";
+            if (newStatus === 'ÇÖZÜLDÜ') {
+                note = prompt("Onarım / Çözüm Detayı (Örn: Basınç valfi onarıldı, kalibre edildi):");
+            } else if (newStatus === 'İNCELENİYOR') {
+                note = prompt("İnceleme / Müdahale Notu (Örn: Saha ekibi cihaza yönlendirildi):");
+            } else if (newStatus === 'AÇIK') {
+                note = prompt("Yeniden Açılma Nedeni:");
+            }
+
+            if (note === null) return;
+
+            try {
+                await fetch(`/api/faults/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        status: newStatus,
+                        technician_note: note 
+                    })
+                });
+                fetchFaults();
+            } catch (err) {
+                alert("Durum güncellenemedi.");
+            }
+        }
+
+        async function deleteFault(id) {
+            if (!confirm(`#${id} numaralı arıza kaydını sistemden kalıcı olarak silmek istediğinize emin misiniz?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/faults/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    fetchFaults();
+                }
+            } catch (err) {
+                alert("Silme işlemi başarısız oldu.");
+            }
+        }
+
+        function applyFilter() {
+            renderTable();
+        }
+
+        function renderTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const tbody = document.getElementById('faultTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = allFaults.filter(fault => {
+                const matchesTab = currentTab === 'ALL' || fault.status === currentTab;
+                const matchesSearch = 
+                    fault.device_id.toLowerCase().includes(searchTerm) ||
+                    fault.error_code.toLowerCase().includes(searchTerm) ||
+                    fault.description.toLowerCase().includes(searchTerm) ||
+                    (fault.technician_note && fault.technician_note.toLowerCase().includes(searchTerm));
+                return matchesTab && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block text-slate-600"></i>
+                            Bu ekranda gösterilecek herhangi bir arıza kaydı bulunmuyor.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtered.forEach(fault => {
+                const isCritical = fault.severity === 'KRİTİK';
+                let statusBadge = '';
+                if (fault.status === 'AÇIK') {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 Açık</span>`;
+                } else if (fault.status === 'İNCELENİYOR') {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">🟡 İnceleniyor</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 Çözüldü</span>`;
+                }
+
+                const techNoteHtml = fault.technician_note ? `
+                    <div class="mt-2 p-2 bg-slate-900/90 border border-teal-500/30 rounded-lg text-xs text-teal-200">
+                        <span class="font-bold text-teal-400"><i class="fa-solid fa-wrench"></i> Teknik Not:</span> ${fault.technician_note}
+                    </div>
+                ` : '';
+
+                // Fotoğraf varsa küçük önizleme resmi ve tıklama, yoksa gri ikon
+                let photoCol = `
+                    <div class="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700/80 flex items-center justify-center text-slate-600 mx-auto" title="Fotoğraf yok">
+                        <i class="fa-solid fa-image-slash text-xs"></i>
+                    </div>
+                `;
+                
+                if (fault.image_data && fault.image_data.length > 50) {
+                    photoCol = `
+                        <div class="relative group mx-auto w-12 h-12">
+                            <img 
+                                src="${fault.image_data}" 
+                                onclick="showPhoto(${fault.id})"
+                                class="w-12 h-12 rounded-lg object-cover border-2 border-teal-400/60 cursor-pointer shadow hover:scale-110 hover:border-teal-300 transition duration-150" 
+                                title="Büyütmek için tıkla"
+                            />
+                            <div class="absolute inset-0 bg-teal-500/20 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition flex items-center justify-center">
+                                <i class="fa-solid fa-magnifying-glass-plus text-white text-xs"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const row = `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="py-3.5 px-4 text-center">${photoCol}</td>
+                        <td class="py-3.5 px-4 font-mono text-slate-500">#${fault.id}</td>
+                        <td class="py-3.5 px-4 font-semibold text-teal-300">${fault.device_id}</td>
+                        <td class="py-3.5 px-4 font-mono text-amber-400">${fault.error_code}</td>
+                        <td class="py-3.5 px-4 text-slate-300">
+                            <div>${fault.description}</div>
+                            ${techNoteHtml}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold ${isCritical ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                                ${fault.severity}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4">${statusBadge}</td>
+                        <td class="py-3.5 px-4 text-xs text-slate-400">${fault.timestamp}</td>
+                        <td class="py-3.5 px-4 text-center">
+                            <div class="inline-flex gap-1.5">
+                                ${fault.status !== 'İNCELENİYOR' ? `
+                                    <button onclick="promptStatusUpdate(${fault.id}, 'İNCELENİYOR')" title="İncelemeye Al" class="px-2.5 py-1 bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 text-xs rounded border border-amber-500/40 transition">
+                                        İncele
+                                    </button>
+                                ` : ''}
+                                
+                                ${fault.status !== 'ÇÖZÜLDÜ' ? `
+                                    <button onclick="promptStatusUpdate(${fault.id}, 'ÇÖZÜLDÜ')" title="Onarıldı / Çözüldü" class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 text-xs rounded border border-emerald-500/40 transition">
+                                        Onarıldı
+                                    </button>
+                                ` : `
+                                    <button onclick="promptStatusUpdate(${fault.id}, 'AÇIK')" title="Yeniden Aç" class="px-2.5 py-1 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 text-xs rounded border border-sky-500/40 transition">
+                                        Yeniden Aç
+                                    </button>
+                                `}
+
+                                <button onclick="deleteFault(${fault.id})" title="Kaydı Kalıcı Olarak Sil" class="px-2.5 py-1 bg-rose-600/30 hover:bg-rose-600/60 text-rose-300 text-xs rounded border border-rose-500/40 transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        async function fetchFaults() {
+            try {
+                const res = await fetch('/api/faults');
+                const data = await res.json();
+                
+                allFaults = data.faults || [];
+                
+                document.getElementById('totalCount').innerText = data.total || 0;
+                document.getElementById('criticalCount').innerText = allFaults.filter(f => f.severity === 'KRİTİK' && f.status !== 'ÇÖZÜLDÜ').length;
+                document.getElementById('investigatingCount').innerText = allFaults.filter(f => f.status === 'İNCELENİYOR').length;
+                document.getElementById('resolvedCount').innerText = allFaults.filter(f => f.status === 'ÇÖZÜLDÜ').length;
+
+                renderTable();
+            } catch (err) {
+                console.error("Veri çekme hatası:", err);
+            }
+        }
+
+        fetchFaults();
+        setInterval(fetchFaults, 3000);
+    </script>
+</body>
+</html>

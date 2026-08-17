@@ -1,0 +1,21 @@
+# Python gereksizleri
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+.venv/
+venv/
+env/
+
+# Node.js & React Native / Expo gereksizleri
+node_modules/
+.expo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistem ve Editör dosyaları
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
